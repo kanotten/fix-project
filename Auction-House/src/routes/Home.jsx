@@ -8,7 +8,6 @@ export function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("created");
 
   useEffect(() => {
     async function getData() {
@@ -16,66 +15,38 @@ export function Home() {
       setError(null);
       try {
         const res = await fetch(
-          `https://v2.api.noroff.dev/auction/listings?limit=21&active=true&page=${page}`,
+          `https://v2.api.noroff.dev/auction/listings?limit=21&sortOrder=asc&active=true&sort=created&page=${page}`,
         );
-
         if (!res.ok) {
-          throw new Error(`API Error: ${res.status} ${res.statusText}`);
+          throw new Error("Failed to fetch data");
         }
-
         const result = await res.json();
-        console.log("API Response:", result);
         setData(result.data || []);
       } catch (error) {
-        console.error("Error fetching data:", error.message);
-        setError("Failed to load listings. Try changing sorting options.");
+        console.error("Error fetching data:", error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     }
     getData();
-  }, [page, sortBy]);
+  }, [page]);
 
-  // Filter Listings Based on Search Query
-  const filteredData = [...data]
-    .filter((listing) =>
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
-    .sort((a, b) => {
-      if (sortBy === "price") {
-        return (a.price || 0) - (b.price || 0); // Low to High
-      }
-      if (sortBy === "price_desc") {
-        return (b.price || 0) - (a.price || 0); // High to Low
-      }
-      return 0; // Default (no sorting)
-    });
+  const filteredData = data.filter((listing) =>
+    listing.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   return (
     <Layout>
       <h1 className="text-3xl font-bold">ALL LISTINGS</h1>
 
-      {/* Sorting and Search */}
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search listings..."
-          className="border p-2 rounded w-2/3"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-
-        <select
-          className="border p-2 rounded"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-        >
-          <option value="created">Newest</option>
-          <option value="created_desc">Oldest</option>
-          <option value="price">Price (Low to High)</option>
-          <option value="price_desc">Price (High to Low)</option>
-        </select>
-      </div>
+      <input
+        type="text"
+        placeholder="Search listings..."
+        className="border p-2 rounded mb-4 w-full"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
 
       {loading && <p className="text-center">Loading...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
@@ -112,7 +83,6 @@ export function Home() {
         )}
       </div>
 
-      {/* Pagination */}
       <div className="flex justify-center mt-6">
         <button
           onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
